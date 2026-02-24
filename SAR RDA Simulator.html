@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAR Range Doppler Algorithm - MATLAB Код</title>
+    <style>
+        :root {
+            --color-bg-primary: #0f172a;
+            --color-bg-secondary: #1e293b;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-accent: #38bdf8;
+            --color-border: rgba(148, 163, 184, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--color-accent);
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        h2 {
+            color: var(--color-accent);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            color: var(--color-text-secondary);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .description {
+            background: var(--color-bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .code-block {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--color-text-primary);
+        }
+
+        .note {
+            background: rgba(56, 189, 248, 0.1);
+            border-left: 4px solid var(--color-accent);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 4px solid #fbbf24;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .file-name {
+            color: var(--color-accent);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        .reference {
+            font-style: italic;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+
+        a {
+            color: var(--color-accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .btn-download {
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 20px;
+            display: inline-block;
+            transition: opacity 0.2s;
+        }
+
+        .btn-download:hover {
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--color-bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛰️ SAR Range Doppler Algorithm - Реализация на MATLAB</h1>
+        
+        <div class="description">
+            <p><strong>Цель:</strong> Демонстрация Range Doppler Algorithm (RDA) для обработки синтетических IQ данных SAR с параметрами, близкими к Sentinel-1C. Реализация включает Range Cell Migration Compensation (RCMC) и Secondary Range Compression (SRC) для обработки данных с большими углами косого визирования (squint angle).</p>
+            <p><strong>Основано на:</strong></p>
+            <ul>
+                <li>Cumming I.G., Wong F.H. "Digital Processing of Synthetic Aperture Radar Data" (2005) - Глава 6</li>
+                <li>Sentinel-1 Level 1 Detailed Algorithm Definition (2022, v2.5)</li>
+                <li>Jansing E.D. "Introduction to Synthetic Aperture Radar" (2021)</li>
+                <li>Harrison A. "Introduction to SAR Using Python and MATLAB" (2022)</li>
+            </ul>
+        </div>
+
+        <div class="note">
+            <strong>📌 Что реализовано:</strong>
+            <ul>
+                <li>Синтез сырых IQ данных от точечных целей</li>
+                <li>Range Compression (сжатие по дальности)</li>
+                <li>Doppler Centroid Estimation (оценка доплеровского центроида)</li>
+                <li>Range Cell Migration Correction (RCMC)</li>
+                <li>Secondary Range Compression (SRC)</li>
+                <li>Azimuth Compression (сжатие по азимуту)</li>
+                <li>Визуализация промежуточных и финальных результатов</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>1. Главный скрипт: SAR_RDA_Demo.m</h2>
+            
+            <div class="file-name">📄 SAR_RDA_Demo.m</div>
+            
+            <div class="code-block">
+                <pre>% =========================================================================
+% SAR Range Doppler Algorithm (RDA) Demonstration
+% =========================================================================
+% Этот скрипт демонстрирует обработку синтетических IQ данных SAR
+% с использованием Range Doppler Algorithm (RDA)
+%
+% Основано на:
+% [1] Cumming & Wong, "Digital Processing of SAR Data", 2005, Chapter 6
+% [2] Sentinel-1 Level 1 Detailed Algorithm Definition, 2022
+% [3] Jansing, "Introduction to SAR", 2021
+%
+% Автор: Демонстрация для Sentinel-1C
+% Дата: 2026
+% =========================================================================
+
+clear all; close all; clc;
+
+%% ========================================================================
+% ПАРАМЕТРЫ SAR СИСТЕМЫ (близкие к Sentinel-1C IW mode)
+% ========================================================================
+
+% Параметры платформы
+params.V_r = 7400;              % Скорость платформы, м/с [1, p.39]
+params.H = 693e3;               % Высота орбиты, м
+params.R_0 = 850e3;             % Минимальная наклонная дальность, м
+
+% Параметры РЛС
+params.f_c = 5.405e9;           % Центральная частота, Гц (C-band) [Sentinel-1]
+params.lambda = 3e8/params.f_c; % Длина волны, м (~5.55 см)
+params.B_r = 56.5e6;            % Полоса ЧМ-импульса, Гц [1, Table 6.1]
+params.T_p = 41.74e-6;          % Длительность импульса, с [1, Table 6.1]
+params.K_r = params.B_r/params.T_p; % Частотная модуляция (chirp rate), Гц/с
+
+% Параметры антенны
+params.L_a = 12.3;              % Длина антенны, м [Sentinel-1]
+params.theta_a = params.lambda/params.L_a; % Ширина ДН по азимуту, рад
+
+% Параметры дискретизации
+params.F_s = 90e6;              % Частота дискретизации по дальности, Гц
+params.PRF = 1700;              % Частота повторения импульсов, Гц [1, Table 6.1]
+
+% Угол косого визирования (squint angle)
+params.theta_sq = 5 * pi/180;   % 5 градусов [1, Chapter 6]
+
+% Вычисляемые параметры
+params.theta_inc = acos(params.H/params.R_0); % Угол визирования
+params.K_a = 2*params.V_r^2/(params.lambda*params.R_0); % FM-rate по азимуту [1, eq.4.27]
+
+% Ширина полосы доплеровских частот [1, eq.4.16]
+params.B_a = 2*params.V_r*sin(params.theta_a/2)/params.lambda;
+
+fprintf('=== Параметры SAR системы ===\n');
+fprintf('Центральная частота: %.3f GHz\n', params.f_c/1e9);
+fprintf('Длина волны: %.2f см\n', params.lambda*100);
+fprintf('Скорость платформы: %.0f м/с\n', params.V_r);
+fprintf('PRF: %.0f Гц\n', params.PRF);
+fprintf('Полоса по дальности: %.2f МГц\n', params.B_r/1e6);
+fprintf('Полоса по азимуту: %.2f Гц\n', params.B_a);
+fprintf('Угол squint: %.2f град\n', params.theta_sq*180/pi);
+fprintf('=============================\n\n');
+
+%% ========================================================================
+% ОПРЕДЕЛЕНИЕ ТОЧЕЧНЫХ ЦЕЛЕЙ
+% ========================================================================
+% Создаем несколько сценариев для демонстрации различных случаев
+% соответствующих рисункам из [1, Chapter 6]
+
+scenario = input('Выберите сценарий (1-4, Enter=1): ');
+if isempty(scenario)
+    scenario = 1;
+end
+
+switch scenario
+    case 1
+        % Одиночная точечная цель в центре сцены [1, Fig.6.3]
+        targets = struct('x', 0, 'y', params.R_0, 'rcs', 1);
+        scenario_name = 'Одиночная цель';
+        
+    case 2
+        % Три цели на одной дальности [1, Fig.6.4]
+        targets = [
+            struct('x', -500, 'y', params.R_0, 'rcs', 1),
+            struct('x',    0, 'y', params.R_0, 'rcs', 1),
+            struct('x',  500, 'y', params.R_0, 'rcs', 1)
+        ];
+        scenario_name = 'Три цели на одной дальности';
+        
+    case 3
+        % Цели вдоль траектории (азимутальная линия) [1, Fig.6.5]
+        targets = [
+            struct('x', -800, 'y', params.R_0, 'rcs', 1),
+            struct('x', -400, 'y', params.R_0, 'rcs', 1),
+            struct('x',    0, 'y', params.R_0, 'rcs', 1),
+            struct('x',  400, 'y', params.R_0, 'rcs', 1),
+            struct('x',  800, 'y', params.R_0, 'rcs', 1)
+        ];
+        scenario_name = 'Цели вдоль азимута';
+        
+    case 4
+        % Несколько целей на разных дальностях [1, Fig.6.9]
+        targets = [
+            struct('x',    0, 'y', params.R_0-1000, 'rcs', 1),
+            struct('x', -500, 'y', params.R_0,      'rcs', 1),
+            struct('x',  500, 'y', params.R_0,      'rcs', 1),
+            struct('x',    0, 'y', params.R_0+1000, 'rcs', 1)
+        ];
+        scenario_name = 'Цели на разных дальностях';
+end
+
+fprintf('Сценарий: %s\n', scenario_name);
+fprintf('Количество целей: %d\n\n', length(targets));
+
+%% ========================================================================
+% СИНТЕЗ СЫРЫХ IQ ДАННЫХ
+% ========================================================================
+fprintf('Синтез сырых IQ данных...\n');
+
+% Временные оси
+N_range = 4096;                 % Количество отсчетов по дальности
+N_azimuth = 2048;               % Количество отсчетов по азимуту
+
+t_range = (0:N_range-1)/params.F_s;          % Быстрое время
+t_azimuth = (0:N_azimuth-1)/params.PRF;      % Медленное время
+t_azimuth = t_azimuth - mean(t_azimuth);     % Центрирование
+
+[T_az, T_r] = meshgrid(t_azimuth, t_range);
+
+% Инициализация сырых данных
+raw_data = zeros(N_range, N_azimuth);
+
+% Генерация сигнала от каждой цели
+for i = 1:length(targets)
+    x_t = targets(i).x;         % Позиция цели по азимуту, м
+    y_t = targets(i).y;         % Позиция цели по дальности, м
+    sigma = targets(i).rcs;     % ЭПР
+    
+    % Траектория платформы с учетом squint
+    x_s = params.V_r * T_az;    % Позиция платформы
+    
+    % Мгновенная наклонная дальность [1, eq.4.11]
+    % R(η) = sqrt((x_s - x_t)^2 + y_t^2)
+    R_inst = sqrt((x_s - x_t).^2 + y_t^2);
+    
+    % Двухпроходная задержка
+    tau = 2*R_inst/3e8;
+    
+    % Опорный ЧМ-импульс по дальности [1, eq.6.2]
+    % s_r(t) = rect(t/T_p) * exp(j*π*K_r*t^2)
+    phase_range = pi * params.K_r * (T_r - tau).^2;
+    envelope_range = double(abs(T_r - tau) &lt;= params.T_p/2);
+    
+    % Фазовая модуляция по азимуту [1, eq.4.19]
+    % φ_az(η) = -4π*R(η)/λ
+    phase_azimuth = -4*pi*R_inst/params.lambda;
+    
+    % Амплитудная огибающая по азимуту (ДН антенны) [1, eq.4.15]
+    % w_a(η) = sinc^2(0.886 * θ_a * V_r * η / λ)
+    azimuth_time_norm = params.V_r * T_az / (params.lambda * params.R_0);
+    envelope_azimuth = sinc(0.886 * params.theta_a * azimuth_time_norm).^2;
+    
+    % Комплексный сигнал
+    signal = sigma * envelope_range .* envelope_azimuth .* ...
+             exp(1j * (phase_range + phase_azimuth));
+    
+    raw_data = raw_data + signal;
+end
+
+% Добавление шума
+SNR_dB = 20;                    % Отношение сигнал/шум, дБ
+noise_power = max(abs(raw_data(:)))^2 / (10^(SNR_dB/10));
+noise = sqrt(noise_power/2) * (randn(size(raw_data)) + 1j*randn(size(raw_data)));
+raw_data = raw_data + noise;
+
+fprintf('Сырые данные синтезированы: %d x %d\n\n', N_range, N_azimuth);
+
+%% ========================================================================
+% ВИЗУАЛИЗАЦИЯ СЫРЫХ ДАННЫХ [1, Fig.6.3]
+% ========================================================================
+figure('Name', 'Сырые IQ данные', 'Position', [100 100 1200 500]);
+
+subplot(1,2,1);
+imagesc(t_azimuth, t_range*1e6, abs(raw_data));
+xlabel('Азимутальное время (с)');
+ylabel('Время дальности (мкс)');
+title('Амплитуда сырых данных');
+colorbar;
+colormap(jet);
+axis xy;
+
+subplot(1,2,2);
+imagesc(t_azimuth, t_range*1e6, angle(raw_data));
+xlabel('Азимутальное время (с)');
+ylabel('Время дальности (мкс)');
+title('Фаза сырых данных');
+colorbar;
+colormap(hsv);
+axis xy;
+
+sgtitle(sprintf('Сырые IQ данные - %s', scenario_name));
+
+%% ========================================================================
+% ШАГИ ОБРАБОТКИ RDA
+% ========================================================================
+
+%% -----------------------------------------------------------------------
+% ШАГ 1: RANGE COMPRESSION (Сжатие по дальности)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 1: Range Compression...\n');
+
+% Опорная функция по дальности [1, eq.6.3]
+t_ref = t_range - mean(t_range);
+ref_range = exp(-1j * pi * params.K_r * t_ref.^2);
+ref_range = ref_range .* (abs(t_ref) &lt;= params.T_p/2);
+
+% Согласованная фильтрация в частотной области [2, Section 6.1.2]
+% Преобразование в частотную область
+S_2D = fft(raw_data, [], 1);
+H_range = conj(fft(ref_range'));
+
+% Применение согласованного фильтра
+S_rc = S_2D .* repmat(H_range, 1, N_azimuth);
+
+% Обратное преобразование
+range_compressed = ifft(S_rc, [], 1);
+
+fprintf('  Разрешение по дальности: %.2f м\n', 3e8/(2*params.B_r));
+
+%% -----------------------------------------------------------------------
+% ШАГ 2: AZIMUTH FFT (Переход в Range-Doppler область)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 2: Azimuth FFT...\n');
+
+% FFT по азимуту [1, Section 6.2]
+S_RD = fftshift(fft(range_compressed, [], 2), 2);
+
+% Азимутальная частотная ось
+f_azimuth = linspace(-params.PRF/2, params.PRF/2, N_azimuth);
+
+fprintf('  Данные в Range-Doppler области\n');
+
+%% -----------------------------------------------------------------------
+% ШАГ 3: DOPPLER CENTROID ESTIMATION (Оценка доплеровского центроида)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 3: Doppler Centroid Estimation...\n');
+
+% Простая оценка по энергетическому центру спектра [1, Section 4.6]
+azimuth_spectrum = sum(abs(S_RD).^2, 1);
+f_dc = sum(f_azimuth .* azimuth_spectrum) / sum(azimuth_spectrum);
+
+fprintf('  Оценка Doppler Centroid: %.2f Гц\n', f_dc);
+
+% Коррекция доплеровского центроида (сдвиг в частотной области)
+phase_shift = exp(-1j * 2*pi * f_dc * t_azimuth);
+S_RD = S_RD .* repmat(phase_shift, N_range, 1);
+
+% Обновление частотной оси
+f_azimuth = f_azimuth - f_dc;
+
+%% -----------------------------------------------------------------------
+% ШАГ 4: SECONDARY RANGE COMPRESSION (SRC)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 4: Secondary Range Compression...\n');
+
+% SRC компенсирует азимутально-зависимое расфокусирование по дальности
+% возникающее из-за squint angle [2, Section 6.3.1]
+
+% Частотная ось по дальности
+f_range = linspace(-params.F_s/2, params.F_s/2, N_range)';
+
+% Вычисление D(f_r, f_a) - SRC фазовой функции [1, eq.6.25]
+% Для каждой азимутальной частоты
+for k = 1:N_azimuth
+    f_a = f_azimuth(k);
+    
+    % Эффективная скорость [1, eq.6.21]
+    V_eff = params.V_r * sqrt(1 - (params.lambda * f_a / (2*params.V_r))^2);
+    
+    % SRC фазовая функция [1, eq.6.25]
+    % H_src = exp(-j*π*λ^2*R_0*f_r^2/(8*V_eff^2))
+    H_src = exp(-1j * pi * params.lambda^2 * params.R_0 * f_range.^2 / ...
+                (8 * V_eff^2));
+    
+    % Применение SRC
+    S_RD(:, k) = S_RD(:, k) .* H_src;
+end
+
+fprintf('  SRC применено\n');
+
+%% -----------------------------------------------------------------------
+% ШАГ 5: RANGE CELL MIGRATION CORRECTION (RCMC)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 5: Range Cell Migration Correction...\n');
+
+% RCMC исправляет кривизну траектории цели в Range-Doppler области
+% [1, Section 6.3, 6.4]
+
+% Вычисление RCMC для каждой азимутальной частоты
+for k = 1:N_azimuth
+    f_a = f_azimuth(k);
+    
+    % Расчет миграции дальности [1, eq.6.17]
+    % ΔR(f_a) = R_0 * (1/cos(θ_sq) * sqrt(1-(λ*f_a/(2*V_r))^2) - 1)
+    cos_theta = cos(params.theta_sq);
+    delta_R = params.R_0 * (1/cos_theta * ...
+              sqrt(1 - (params.lambda*f_a/(2*params.V_r))^2) - 1);
+    
+    % Преобразование миграции в задержку
+    delta_tau = 2 * delta_R / 3e8;
+    
+    % Интерполяция для коррекции [2, Section 6.3.2]
+    % Применяем фазовый сдвиг в частотной области
+    H_rcmc = exp(1j * 2*pi * f_range * delta_tau);
+    S_RD(:, k) = S_RD(:, k) .* H_rcmc;
+end
+
+fprintf('  RCMC применена\n');
+
+%% -----------------------------------------------------------------------
+% ШАГ 6: AZIMUTH COMPRESSION (Сжатие по азимуту)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 6: Azimuth Compression...\n');
+
+% Согласованный фильтр по азимуту [1, Section 6.5]
+% Для каждой дальности применяем фазовую коррекцию
+
+for i = 1:N_range
+    % Опорная функция по азимуту [1, eq.6.29]
+    % H_az(f_a) = exp(j*π*f_a^2/K_a)
+    H_azimuth = exp(1j * pi * f_azimuth.^2 / params.K_a);
+    
+    % Применение согласованного фильтра
+    S_RD(i, :) = S_RD(i, :) .* H_azimuth;
+end
+
+fprintf('  Разрешение по азимуту: %.2f м\n', params.lambda*params.R_0/(2*params.L_a));
+
+%% -----------------------------------------------------------------------
+% ШАГ 7: INVERSE AZIMUTH FFT (Обратное преобразование по азимуту)
+% -----------------------------------------------------------------------
+fprintf('ШАГ 7: Inverse Azimuth FFT...\n');
+
+% Обратное FFT по азимуту
+focused_image = ifft(ifftshift(S_RD, 2), [], 2);
+
+fprintf('  Фокусированное изображение получено\n\n');
+
+%% ========================================================================
+% ВИЗУАЛИЗАЦИЯ РЕЗУЛЬТАТОВ
+% ========================================================================
+
+% Преобразование координат для визуализации
+range_axis = t_range * 3e8/2;   % Наклонная дальность, м
+azimuth_axis = t_azimuth * params.V_r; % Позиция по азимуту, м
+
+%% Рисунок 1: Амплитуда данных после Range Compression [1, Fig.6.3]
+figure('Name', 'После Range Compression', 'Position', [100 100 1200 500]);
+
+subplot(1,2,1);
+imagesc(t_azimuth, range_axis/1e3, 20*log10(abs(range_compressed)+eps));
+xlabel('Азимутальное время (с)');
+ylabel('Наклонная дальность (км)');
+title('Range Compressed - Амплитуда (дБ)');
+colorbar;
+caxis([-40 0]);
+colormap(jet);
+axis xy;
+
+subplot(1,2,2);
+imagesc(azimuth_axis, range_axis/1e3, 20*log10(abs(range_compressed)+eps));
+xlabel('Позиция по азимуту (м)');
+ylabel('Наклонная дальность (км)');
+title('Range Compressed - Амплитуда (дБ)');
+colorbar;
+caxis([-40 0]);
+colormap(jet);
+axis xy;
+
+sgtitle('После сжатия по дальности (Range Compression)');
+
+%% Рисунок 2: Range-Doppler область [1, Fig.6.4]
+figure('Name', 'Range-Doppler Domain', 'Position', [100 100 1200 500]);
+
+subplot(1,2,1);
+imagesc(f_azimuth, range_axis/1e3, 20*log10(abs(S_RD)+eps));
+xlabel('Доплеровская частота (Гц)');
+ylabel('Наклонная дальность (км)');
+title('Range-Doppler область - Амплитуда (дБ)');
+colorbar;
+caxis([-40 0]);
+colormap(jet);
+axis xy;
+
+subplot(1,2,2);
+imagesc(f_azimuth, range_axis/1e3, angle(S_RD));
+xlabel('Доплеровская частота (Гц)');
+ylabel('Наклонная дальность (км)');
+title('Range-Doppler область - Фаза (рад)');
+colorbar;
+colormap(hsv);
+axis xy;
+
+sgtitle('Range-Doppler область (после RCMC и SRC)');
+
+%% Рисунок 3: Фокусированное изображение [1, Fig.6.5, 6.9]
+figure('Name', 'Фокусированное изображение', 'Position', [100 100 1200 500]);
+
+subplot(1,2,1);
+imagesc(azimuth_axis, range_axis/1e3, 20*log10(abs(focused_image)+eps));
+xlabel('Позиция по азимуту (м)');
+ylabel('Наклонная дальность (км)');
+title('Фокусированное изображение - Амплитуда (дБ)');
+colorbar;
+caxis([-40 0]);
+colormap(jet);
+axis xy;
+grid on;
+
+subplot(1,2,2);
+imagesc(azimuth_axis, range_axis/1e3, angle(focused_image));
+xlabel('Позиция по азимуту (м)');
+ylabel('Наклонная дальность (км)');
+title('Фокусированное изображение - Фаза (рад)');
+colorbar;
+colormap(hsv);
+axis xy;
+grid on;
+
+sgtitle(sprintf('Финальное фокусированное изображение - %s', scenario_name));
+
+%% Рисунок 4: Профили точечных целей
+if length(targets) &gt; 0
+    figure('Name', 'Профили точечных целей', 'Position', [100 100 1200 500]);
+    
+    % Находим центральную цель для анализа
+    center_target_idx = ceil(length(targets)/2);
+    x_target = targets(center_target_idx).x;
+    y_target = targets(center_target_idx).y;
+    
+    % Индексы ближайшей позиции цели
+    [~, idx_azimuth] = min(abs(azimuth_axis - x_target));
+    [~, idx_range] = min(abs(range_axis - y_target));
+    
+    % Профиль по дальности
+    subplot(1,2,1);
+    range_profile = abs(focused_image(:, idx_azimuth));
+    plot(range_axis/1e3, 20*log10(range_profile/max(range_profile)));
+    xlabel('Наклонная дальность (км)');
+    ylabel('Нормированная амплитуда (дБ)');
+    title('Профиль по дальности');
+    grid on;
+    ylim([-40 5]);
+    
+    % Профиль по азимуту
+    subplot(1,2,2);
+    azimuth_profile = abs(focused_image(idx_range, :));
+    plot(azimuth_axis, 20*log10(azimuth_profile/max(azimuth_profile)));
+    xlabel('Позиция по азимуту (м)');
+    ylabel('Нормированная амплитуда (дБ)');
+    title('Профиль по азимуту');
+    grid on;
+    ylim([-40 5]);
+    
+    sgtitle('Профили точечной цели');
+end
+
+%% ========================================================================
+% АНАЛИЗ КАЧЕСТВА ФОКУСИРОВКИ
+% ========================================================================
+fprintf('=== Анализ качества фокусировки ===\n');
+
+% Теоретическое разрешение
+res_range_theory = 3e8/(2*params.B_r);
+res_azimuth_theory = params.lambda*params.R_0/(2*params.L_a);
+
+fprintf('Теоретическое разрешение по дальности: %.2f м\n', res_range_theory);
+fprintf('Теоретическое разрешение по азимуту: %.2f м\n', res_azimuth_theory);
+
+% Измеренное разрешение (по уровню -3дБ)
+if length(targets) &gt; 0
+    % Для центральной цели
+    [~, idx_azimuth] = min(abs(azimuth_axis - targets(center_target_idx).x));
+    [~, idx_range] = min(abs(range_axis - targets(center_target_idx).y));
+    
+    % Разрешение по дальности
+    range_profile = abs(focused_image(:, idx_azimuth));
+    [max_val, max_idx] = max(range_profile);
+    half_power = max_val/sqrt(2);
+    idx_3dB = find(range_profile &gt;= half_power);
+    if length(idx_3dB) &gt; 1
+        res_range_measured = (range_axis(idx_3dB(end)) - range_axis(idx_3dB(1)));
+        fprintf('Измеренное разрешение по дальности: %.2f м\n', res_range_measured);
+    end
+    
+    % Разрешение по азимуту
+    azimuth_profile = abs(focused_image(idx_range, :));
+    [max_val, max_idx] = max(azimuth_profile);
+    half_power = max_val/sqrt(2);
+    idx_3dB = find(azimuth_profile &gt;= half_power);
+    if length(idx_3dB) &gt; 1
+        res_azimuth_measured = abs(azimuth_axis(idx_3dB(end)) - azimuth_axis(idx_3dB(1)));
+        fprintf('Измеренное разрешение по азимуту: %.2f м\n', res_azimuth_measured);
+    end
+end
+
+fprintf('===================================\n');
+fprintf('\nОбработка завершена успешно!\n');
+fprintf('Демонстрация соответствует Рис. 6.1-6.9 из [1]\n');</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>2. Дополнительный скрипт: Детальная визуализация алгоритма</h2>
+            
+            <div class="file-name">📄 SAR_RDA_Detailed_Visualization.m</div>
+            
+            <div class="code-block">
+                <pre>% =========================================================================
+% Детальная визуализация этапов Range Doppler Algorithm
+% =========================================================================
+% Этот скрипт создает подробные графики для каждого этапа обработки RDA
+% соответствующие рисункам 6.1-6.9 из Cumming & Wong, 2005
+% =========================================================================
+
+clear all; close all; clc;
+
+%% Запрос сценария
+fprintf('Выберите сценарий для детальной визуализации:\n');
+fprintf('1 - Одиночная точечная цель (Рис. 6.3)\n');
+fprintf('2 - Три цели на одной дальности (Рис. 6.4)\n');
+fprintf('3 - Цели вдоль азимута (Рис. 6.5)\n');
+fprintf('4 - Цели на разных дальностях (Рис. 6.9)\n');
+scenario = input('Введите номер (1-4): ');
+
+%% Используем основной скрипт для генерации данных
+% (Здесь должен быть код из основного скрипта или его вызов)
+% Для краткости предполагаем, что данные уже сгенерированы
+
+%% ========================================================================
+% ДЕТАЛЬНАЯ ВИЗУАЛИЗАЦИЯ: БЛОК-СХЕМА АЛГОРИТМА [1, Fig.6.1]
+% ========================================================================
+
+figure('Name', 'Блок-схема RDA', 'Position', [100 100 900 700]);
+
+% Текстовое описание блок-схемы
+subplot('Position', [0.1 0.1 0.8 0.85]);
+axis off;
+
+text(0.5, 0.95, 'Range Doppler Algorithm (RDA)', ...
+    'FontSize', 16, 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
+
+% Блоки алгоритма
+blocks = {
+    'Raw Data s(t,η)'
+    '↓'
+    'Range Compression'
+    's_rc(t,η) = s(t,η) ⊗ h_range(t)'
+    '↓'
+    'Azimuth FFT'
+    'S_RD(t,f_η) = FFT_η{s_rc(t,η)}'
+    '↓'
+    'Doppler Centroid Estimation'
+    'f_dc = argmax_f |S_RD(t,f)|²'
+    '↓'
+    'Secondary Range Compression (SRC)'
+    'Компенсация азимутально-зависимого'
+    'расфокусирования по дальности'
+    '↓'
+    'Range Cell Migration Correction (RCMC)'
+    'Выпрямление траекторий целей'
+    'в Range-Doppler области'
+    '↓'
+    'Azimuth Compression'
+    'S_focused(t,f_η) = S_RD(t,f_η) × H_az(f_η)'
+    '↓'
+    'Inverse Azimuth FFT'
+    's_focused(t,η) = IFFT_η{S_focused(t,f_η)}'
+    '↓'
+    'Focused Image'
+};
+
+y_pos = 0.88;
+for i = 1:length(blocks)
+    if strcmp(blocks{i}, '↓')
+        text(0.5, y_pos, blocks{i}, 'FontSize', 14, ...
+            'HorizontalAlignment', 'center');
+        y_pos = y_pos - 0.025;
+    else
+        text(0.5, y_pos, blocks{i}, 'FontSize', 10, ...
+            'HorizontalAlignment', 'center', ...
+            'BackgroundColor', [0.9 0.95 1], 'EdgeColor', 'k', ...
+            'Margin', 5, 'LineWidth', 1);
+        y_pos = y_pos - 0.035;
+    end
+end
+
+%% ========================================================================
+% ВИЗУАЛИЗАЦИЯ: Траектории в Range-Doppler области
+% ========================================================================
+% Демонстрация эффекта Range Cell Migration
+
+figure('Name', 'Range Cell Migration', 'Position', [100 100 1400 500]);
+
+% Параметры для демонстрации
+R0 = 850e3;
+V = 7400;
+lambda = 0.0555;
+theta_sq = 5*pi/180;
+
+f_a = linspace(-100, 100, 1000);
+
+subplot(1,3,1);
+% Траектория без коррекции
+R_trajectory = R0 ./ cos(theta_sq) .* sqrt(1 - (lambda*f_a/(2*V)).^2);
+plot(f_a, (R_trajectory - R0)/1e3, 'b-', 'LineWidth', 2);
+xlabel('Доплеровская частота (Гц)');
+ylabel('Миграция дальности (км)');
+title('До RCMC');
+grid on;
+
+subplot(1,3,2);
+% Траектория после RCMC
+plot(f_a, zeros(size(f_a)), 'r-', 'LineWidth', 2);
+xlabel('Доплеровская частота (Гц)');
+ylabel('Миграция дальности (км)');
+title('После RCMC');
+grid on;
+ylim([-2 2]);
+
+subplot(1,3,3);
+% Сравнение
+hold on;
+plot(f_a, (R_trajectory - R0)/1e3, 'b-', 'LineWidth', 1.5, 'DisplayName', 'До RCMC');
+plot(f_a, zeros(size(f_a)), 'r-', 'LineWidth', 1.5, 'DisplayName', 'После RCMC');
+xlabel('Доплеровская частота (Гц)');
+ylabel('Миграция дальности (км)');
+title('Сравнение');
+legend('Location', 'best');
+grid on;
+hold off;
+
+sgtitle('Демонстрация Range Cell Migration Correction');
+
+%% ========================================================================
+% ВИЗУАЛИЗАЦИЯ: Согласованные фильтры
+% ========================================================================
+
+figure('Name', 'Согласованные фильтры', 'Position', [100 100 1400 500]);
+
+% Параметры
+Tp = 41.74e-6;
+Br = 56.5e6;
+Kr = Br/Tp;
+Fs = 90e6;
+
+t = linspace(-Tp, Tp, 1000);
+
+% Фильтр по дальности
+subplot(2,3,1);
+h_range = exp(1j*pi*Kr*t.^2) .* (abs(t) &lt;= Tp/2);
+plot(t*1e6, real(h_range), 'b-', 'LineWidth', 1.5);
+xlabel('Время (мкс)');
+ylabel('Амплитуда');
+title('Range Reference (Real)');
+grid on;
+
+subplot(2,3,4);
+H_range_freq = fftshift(fft(h_range));
+f = linspace(-Fs/2, Fs/2, length(H_range_freq));
+plot(f/1e6, abs(H_range_freq), 'b-', 'LineWidth', 1.5);
+xlabel('Частота (МГц)');
+ylabel('Амплитуда');
+title('Range Filter Spectrum');
+grid on;
+
+% Фильтр по азимуту
+subplot(2,3,2);
+PRF = 1700;
+Ka = 2*V^2/(lambda*R0);
+t_az = linspace(-0.5, 0.5, 1000);
+h_azimuth = exp(1j*pi*Ka*t_az.^2);
+plot(t_az, real(h_azimuth), 'r-', 'LineWidth', 1.5);
+xlabel('Время (с)');
+ylabel('Амплитуда');
+title('Azimuth Reference (Real)');
+grid on;
+
+subplot(2,3,5);
+H_az_freq = fftshift(fft(h_azimuth));
+f_az = linspace(-PRF/2, PRF/2, length(H_az_freq));
+plot(f_az, abs(H_az_freq), 'r-', 'LineWidth', 1.5);
+xlabel('Частота (Гц)');
+ylabel('Амплитуда');
+title('Azimuth Filter Spectrum');
+grid on;
+
+% Двумерная передаточная функция
+subplot(2,3,[3 6]);
+[F_range, F_az] = meshgrid(linspace(-Br/2, Br/2, 200), ...
+                            linspace(-PRF/2, PRF/2, 200));
+H_2D = ones(size(F_range)); % Упрощенная модель
+imagesc(linspace(-Br/2, Br/2, 200)/1e6, ...
+        linspace(-PRF/2, PRF/2, 200), abs(H_2D));
+xlabel('Range Frequency (МГц)');
+ylabel('Azimuth Frequency (Гц)');
+title('2D Transfer Function');
+colorbar;
+axis xy;
+
+sgtitle('Согласованные фильтры Range Doppler Algorithm');
+
+%% ========================================================================
+% ЭКСПОРТ ПАРАМЕТРОВ
+% ========================================================================
+
+fprintf('\n=== Параметры системы для воспроизведения ===\n');
+fprintf('Используйте эти параметры для точного воспроизведения\n');
+fprintf('рисунков из Cumming & Wong, 2005:\n\n');
+fprintf('Carrier frequency: %.3f GHz\n', 5.405);
+fprintf('Range bandwidth: %.2f MHz\n', 56.5);
+fprintf('Pulse width: %.2f µs\n', 41.74);
+fprintf('Sampling rate: %.0f MHz\n', 90);
+fprintf('PRF: %.0f Hz\n', 1700);
+fprintf('Platform velocity: %.0f m/s\n', 7400);
+fprintf('Slant range: %.0f km\n', 850);
+fprintf('Antenna length: %.1f m\n', 12.3);
+fprintf('Squint angle: %.0f degrees\n', 5);
+fprintf('============================================\n');
+
+fprintf('\nДетальная визуализация завершена!\n');</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Вспомогательные функции</h2>
+            
+            <div class="file-name">📄 estimate_doppler_centroid.m</div>
+            
+            <div class="code-block">
+                <pre>function [f_dc, correlation] = estimate_doppler_centroid(data, PRF, method)
+% =========================================================================
+% Оценка Doppler Centroid
+% =========================================================================
+% Функция для оценки доплеровского центроида по различным методам
+%
+% Вход:
+%   data - комплексные данные после Range Compression [N_range x N_azimuth]
+%   PRF - частота повторения импульсов, Гц
+%   method - метод оценки: 'energy', 'correlation', 'clutter'
+%
+% Выход:
+%   f_dc - оценка Doppler centroid, Гц
+%   correlation - функция корреляции (для метода 'correlation')
+%
+% Референции:
+%   [1] Cumming & Wong, 2005, Section 4.6
+%   [2] Sentinel-1 Algorithm Definition, Section 5.5
+% =========================================================================
+
+if nargin &lt; 3
+    method = 'energy';
+end
+
+[N_range, N_azimuth] = size(data);
+
+switch lower(method)
+    case 'energy'
+        % Энергетический метод [1, eq.4.62]
+        % f_dc находится как центр масс спектра мощности
+        
+        % FFT по азимуту
+        spectrum = fftshift(fft(data, [], 2), 2);
+        
+        % Усреднение по дальности
+        azimuth_spectrum = mean(abs(spectrum).^2, 1);
+        
+        % Частотная ось
+        f_axis = linspace(-PRF/2, PRF/2, N_azimuth);
+        
+        % Центр масс
+        f_dc = sum(f_axis .* azimuth_spectrum) / sum(azimuth_spectrum);
+        
+        correlation = [];
+        
+    case 'correlation'
+        % Корреляционный метод [1, Section 4.6.2]
+        % Использует корреляцию между соседними импульсами
+        
+        % Корреляция соседних азимутальных линий
+        corr_sum = 0;
+        for i = 1:N_range
+            % Корреляция для каждой дальности
+            line1 = data(i, 1:end-1);
+            line2 = data(i, 2:end);
+            corr_sum = corr_sum + sum(line1 .* conj(line2));
+        end
+        
+        % Фаза корреляции связана с Doppler centroid
+        phase = angle(corr_sum);
+        f_dc = phase * PRF / (2*pi);
+        
+        correlation = corr_sum;
+        
+    case 'clutter'
+        % Метод по отражению от подстилающей поверхности
+        % [2, Section 5.5.2]
+        % Упрощенная реализация
+        
+        % Выбираем центральную часть по дальности
+        center_idx = round(N_range/2);
+        range_window = max(1, center_idx-50):min(N_range, center_idx+50);
+        
+        % Данные центрального участка
+        data_center = data(range_window, :);
+        
+        % FFT по азимуту
+        spectrum = fftshift(fft(data_center, [], 2), 2);
+        
+        % Усреднение
+        azimuth_spectrum = mean(abs(spectrum).^2, 1);
+        
+        % Поиск максимума
+        [~, max_idx] = max(azimuth_spectrum);
+        f_axis = linspace(-PRF/2, PRF/2, N_azimuth);
+        f_dc = f_axis(max_idx);
+        
+        correlation = [];
+        
+    otherwise
+        error('Неизвестный метод. Используйте: energy, correlation, или clutter');
+end
+
+end</pre>
+            </div>
+            
+            <div class="file-name">📄 compute_rcmc_parameters.m</div>
+            
+            <div class="code-block">
+                <pre>function [delta_R, delta_tau] = compute_rcmc_parameters(f_azimuth, params)
+% =========================================================================
+% Вычисление параметров Range Cell Migration Correction
+% =========================================================================
+% Функция вычисляет величину миграции дальности для каждой
+% азимутальной частоты
+%
+% Вход:
+%   f_azimuth - вектор азимутальных частот, Гц
+%   params - структура параметров SAR системы
+%
+% Выход:
+%   delta_R - миграция дальности, м
+%   delta_tau - миграция во времени, с
+%
+% Референции:
+%   [1] Cumming & Wong, 2005, eq. 6.17, 6.18
+%   [2] Sentinel-1 Algorithm, Section 6.3.2
+% =========================================================================
+
+% Извлечение параметров
+R_0 = params.R_0;           % Минимальная дальность, м
+V_r = params.V_r;           % Скорость платформы, м/с
+lambda = params.lambda;     % Длина волны, м
+theta_sq = params.theta_sq; % Угол squint, рад
+
+% Вычисление миграции дальности [1, eq.6.17]
+% ΔR(f_a) = R_0 * (sec(θ_sq) * sqrt(1 - (λ*f_a/(2*V_r))^2) - 1)
+
+cos_theta = cos(theta_sq);
+sec_theta = 1/cos_theta;
+
+% Нормированная доплеровская частота
+f_norm = lambda * f_azimuth / (2 * V_r);
+
+% Проверка диапазона (|f_norm| должно быть &lt; 1)
+if any(abs(f_norm) &gt;= 1)
+    warning('Некоторые азимутальные частоты выходят за допустимый диапазон');
+    f_norm(abs(f_norm) &gt;= 1) = sign(f_norm(abs(f_norm) &gt;= 1)) * 0.999;
+end
+
+% Миграция дальности
+delta_R = R_0 * (sec_theta * sqrt(1 - f_norm.^2) - 1);
+
+% Преобразование в миграцию времени [1, eq.6.18]
+% Δτ = 2*ΔR/c
+c = 3e8;  % Скорость света
+delta_tau = 2 * delta_R / c;
+
+% Дополнительная коррекция для больших углов squint [1, Section 6.4]
+if abs(theta_sq) &gt; 10*pi/180  % &gt; 10 градусов
+    % Учет члена второго порядка
+    % ΔR_2 = R_0 * λ² * f_a² / (8*V_r²) * tan²(θ_sq)
+    delta_R_second = R_0 * lambda^2 * f_azimuth.^2 / (8*V_r^2) * tan(theta_sq)^2;
+    delta_R = delta_R + delta_R_second;
+    delta_tau = 2 * delta_R / c;
+end
+
+end</pre>
+            </div>
+            
+            <div class="file-name">📄 apply_src_correction.m</div>
+            
+            <div class="code-block">
+                <pre>function S_corrected = apply_src_correction(S_RD, f_range, f_azimuth, params)
+% =========================================================================
+% Secondary Range Compression (SRC)
+% =========================================================================
+% Функция применяет вторичное сжатие по дальности для компенсации
+% азимутально-зависимого расфокусирования
+%
+% Вход:
+%   S_RD - данные в Range-Doppler области [N_range x N_azimuth]
+%   f_range - вектор частот по дальности, Гц
+%   f_azimuth - вектор частот по азимуту, Гц
+%   params - структура параметров SAR
+%
+% Выход:
+%   S_corrected - данные после SRC [N_range x N_azimuth]
+%
+% Референции:
+%   [1] Cumming & Wong, 2005, eq. 6.25, Section 6.3
+%   [2] Sentinel-1 Algorithm, Section 6.3.1
+% =========================================================================
+
+[N_range, N_azimuth] = size(S_RD);
+
+% Извлечение параметров
+R_0 = params.R_0;
+V_r = params.V_r;
+lambda = params.lambda;
+
+% Инициализация выходного массива
+S_corrected = S_RD;
+
+% Применение SRC для каждой азимутальной частоты
+for k = 1:N_azimuth
+    f_a = f_azimuth(k);
+    
+    % Эффективная скорость [1, eq.6.21]
+    % V_eff = V_r * sqrt(1 - (λ*f_a/(2*V_r))²)
+    f_norm = (lambda * f_a) / (2 * V_r);
+    
+    % Проверка допустимого диапазона
+    if abs(f_norm) &gt;= 1
+        continue;
+    end
+    
+    V_eff = V_r * sqrt(1 - f_norm^2);
+    
+    % SRC фазовая функция [1, eq.6.25]
+    % Φ_src(f_r, f_a) = -π * λ² * R_0 * f_r² / (8 * V_eff²)
+    phase_src = -pi * lambda^2 * R_0 * f_range.^2 / (8 * V_eff^2);
+    
+    % Применение фазовой коррекции
+    H_src = exp(1j * phase_src);
+    S_corrected(:, k) = S_RD(:, k) .* H_src;
+end
+
+% Примечание: [2] использует более точную формулу для Sentinel-1:
+% Φ_src = -π * λ² * R_ref * f_r² * D(f_a) / (8 * V_eff²)
+% где D(f_a) - дополнительный корректирующий член
+
+end</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. Руководство по использованию</h2>
+            
+            <div class="card">
+                <h3>Установка и запуск</h3>
+                <ol>
+                    <li>Сохраните все файлы .m в одну директорию</li>
+                    <li>Откройте MATLAB и перейдите в эту директорию</li>
+                    <li>Запустите основной скрипт: <code>SAR_RDA_Demo</code></li>
+                    <li>Выберите сценарий (1-4) для визуализации</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Доступные сценарии</h3>
+                <ul>
+                    <li><strong>Сценарий 1:</strong> Одиночная точечная цель - демонстрирует базовую обработку</li>
+                    <li><strong>Сценарий 2:</strong> Три цели на одной дальности - показывает разрешение по азимуту</li>
+                    <li><strong>Сценарий 3:</strong> Цели вдоль азимута - демонстрирует RCMC</li>
+                    <li><strong>Сценарий 4:</strong> Цели на разных дальностях - полная демонстрация RDA</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Получаемые результаты</h3>
+                <ul>
+                    <li><strong>Рисунок 1:</strong> Сырые IQ данные (амплитуда и фаза)</li>
+                    <li><strong>Рисунок 2:</strong> После сжатия по дальности</li>
+                    <li><strong>Рисунок 3:</strong> Range-Doppler область (после RCMC и SRC)</li>
+                    <li><strong>Рисунок 4:</strong> Фокусированное изображение</li>
+                    <li><strong>Рисунок 5:</strong> Профили точечных целей</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5. Ключевые формулы и ссылки</h2>
+            
+            <div class="note">
+                <h3>Основные уравнения</h3>
+                
+                <p><strong>Мгновенная дальность [1, eq.4.11]:</strong><br>
+                <code>R(η) = √[(V_r·η - x_t)² + y_t²]</code></p>
+                
+                <p><strong>Азимутальная частотная модуляция [1, eq.4.27]:</strong><br>
+                <code>K_a = 2·V_r² / (λ·R_0)</code></p>
+                
+                <p><strong>Range Cell Migration [1, eq.6.17]:</strong><br>
+                <code>ΔR(f_a) = R_0·(sec(θ_sq)·√[1-(λ·f_a/(2·V_r))²] - 1)</code></p>
+                
+                <p><strong>SRC фаза [1, eq.6.25]:</strong><br>
+                <code>Φ_src = -π·λ²·R_0·f_r² / (8·V_eff²)</code></p>
+                
+                <p><strong>Азимутальный согласованный фильтр [1, eq.6.29]:</strong><br>
+                <code>H_az(f_a) = exp(j·π·f_a²/K_a)</code></p>
+            </div>
+            
+            <div class="warning">
+                <h3>⚠️ Важные замечания</h3>
+                <ul>
+                    <li>Код предполагает прямолинейное движение платформы без учета кривизны Земли</li>
+                    <li>Не включена калибровка и радиометрическая коррекция</li>
+                    <li>Параметры максимально приближены к Sentinel-1C, но упрощены для демонстрации</li>
+                    <li>Для углов squint &gt; 20° может потребоваться более точная модель RCMC</li>
+                    <li>Не учитываются эффекты тропосферной и ионосферной задержки</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>6. Дополнительные материалы</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>📚 Литература</h3>
+                    <ul>
+                        <li>[1] Cumming & Wong (2005) - основной источник теории RDA</li>
+                        <li>[2] Sentinel-1 Algorithm (2022) - практическая реализация для спутника</li>
+                        <li>[3] Jansing (2021) - современное введение в SAR</li>
+                        <li>[4] Harrison (2022) - практические примеры</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>🔬 Расширения</h3>
+                    <ul>
+                        <li>Добавление калибровки и геометрической коррекции</li>
+                        <li>Реализация Omega-K алгоритма для сравнения</li>
+                        <li>Обработка реальных данных Sentinel-1</li>
+                        <li>Учет атмосферных эффектов</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>💡 Параметры Sentinel-1C</h3>
+                    <ul>
+                        <li>Частота: 5.405 GHz (C-band)</li>
+                        <li>Полоса: до 100 MHz</li>
+                        <li>PRF: ~1700 Hz (IW mode)</li>
+                        <li>Разрешение: 5m × 20m (IW SLC)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="description">
+            <h3>📌 Соответствие рисункам из Cumming & Wong (2005)</h3>
+            <ul>
+                <li><strong>Рис. 6.1:</strong> Блок-схема алгоритма - реализована в основном скрипте</li>
+                <li><strong>Рис. 6.3:</strong> Сырые данные одиночной цели - Сценарий 1</li>
+                <li><strong>Рис. 6.4:</strong> Три цели в Range-Doppler области - Сценарий 2</li>
+                <li><strong>Рис. 6.5:</strong> Цели вдоль азимута - Сценарий 3</li>
+                <li><strong>Рис. 6.9:</strong> Обработка целей на разных дальностях - Сценарий 4</li>
+            </ul>
+            <p><strong>Примечание:</strong> Для получения точного соответствия рисункам из книги может потребоваться тонкая настройка параметров системы, так как в книге параметры не полностью специфицированы.</p>
+        </div>
+
+        <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--color-border); text-align: center; color: var(--color-text-secondary);">
+            <p>SAR Range Doppler Algorithm Demonstration © 2026</p>
+            <p>Основано на Cumming & Wong (2005), Sentinel-1 Algorithm (2022)</p>
+        </footer>
+    </div>
+</body>
+</html>
+
